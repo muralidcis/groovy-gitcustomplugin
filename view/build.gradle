@@ -30,9 +30,9 @@ def inputFile = new File("README.md")
 github {
     owner = userName
     repo = repoName
-    token = '3edb8131202cbe1c0168317f243a7beb07b50ede'
+    token = '9174fdd791eadd177b2035236987c4c32128c56c'
     tagName = '9.1.1'
     targetCommitish = 'master'
-    name = 'fd-toolkit-'+getVersion()
+    name = '9.1.1'
 }
 

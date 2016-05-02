@@ -16,9 +16,15 @@ class GithubPluginTest {
 
     }
 
+    //@Test
+    //void shouldHasGithubReleaseTask() {
+      //  Assert.assertTrue(project.tasks.githubRelease instanceof ReleaseTask)
+    //}
+    
     @Test
-    void shouldHasGithubReleaseTask() {
-        Assert.assertTrue(project.tasks.githubRelease instanceof ReleaseTask)
+    void shouldHasGithubRemoveTask() {
+    //    Assert.assertTrue(project.tasks.githubRelease instanceof RemoveTask)
     }
+
 }
 
