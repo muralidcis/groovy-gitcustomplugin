@@ -1,0 +1,126 @@
+buildscript {
+    repositories {
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+    dependencies {
+        classpath "com.gradle.publish:plugin-publish-plugin:0.9.3"
+    }
+}
+
+plugins {
+    id "com.jfrog.bintray" version "1.6"
+}
+
+apply plugin: 'groovy'
+apply plugin: 'maven'
+apply plugin: 'maven-publish'
+apply plugin: 'signing'
+apply plugin: "com.gradle.plugin-publish"
+
+def GradleGithubPluginGroupId = 'co.riiid'
+def GradleGithubPluginVersion = '0.4.2'
+def GradleGithubPluginArtifact = 'gradle-github-plugin'
+def GradleGithubPluginUrl = 'https://github.com/riiid/gradle-github-plugin'
+
+pluginBundle {
+    website = GradleGithubPluginUrl
+    vcsUrl = GradleGithubPluginUrl
+    description = 'Gradle plugin for Github releases'
+    tags = ['github', 'gradle', 'release', 'releases']
+
+    plugins {
+        greetingsPlugin {
+            id = 'co.riiid.gradle'
+            displayName = 'Gradle plugin for Github releases'
+        }
+    }
+}
+
+task javadocJar(type: Jar) {
+    classifier = 'javadoc'
+    from 'build/docs/groovydoc'
+}
+
+task sourcesJar(type: Jar) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+artifacts {
+    archives javadocJar
+    archives sourcesJar
+}
+
+
+
+publishing {
+publications {
+mavenJava(MavenPublication) {
+groupId GradleGithubPluginGroupId
+artifactId GradleGithubPluginArtifact
+version GradleGithubPluginVersion
+from components.java
+}
+}
+repositories {
+maven {
+url 'file://' + new File(System.getProperty('user.home'), '.m2/repository').absolutePath
+}
+}
+}
+			      
+// publishing {
+//    publications {
+//        GradleGithubPluginPublish(MavenPublication) {
+        //    from components.java
+      //      groupId GradleGithubPluginGroupId
+    //        artifactId GradleGithubPluginArtifact
+  //          version GradleGithubPluginVersion
+//
+        //    artifact sourcesJar
+      //      artifact javadocJar
+    //    }
+  //  }
+//} 
+
+bintray {
+    user = project.hasProperty("user") ? project.user : ""
+    key = project.hasProperty("key") ? project.key : ""
+    publications = ['GradleGithubPluginPublish']
+    publish = true
+    dryRun = project.hasProperty("dryRun") ? project.dryRun : true
+
+    pkg {
+        repo = 'maven'
+        name = GradleGithubPluginArtifact
+        licenses = ['Apache-2.0']
+        vcsUrl = "${GradleGithubPluginUrl}.git"
+        publicDownloadNumbers = true
+
+        version {
+            name = GradleGithubPluginVersion
+            vcsTag = GradleGithubPluginVersion
+            gpg {
+                sign = true
+                passphrase = project.hasProperty("passphrase") ? project.passphrase : ""
+            }
+        }
+    }
+}
+
+group GradleGithubPluginGroupId
+version GradleGithubPluginVersion
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+    compile gradleApi()
+    compile localGroovy()
+    compile 'org.codehaus.groovy.modules.http-builder:http-builder:0.7.1'
+    compile 'org.zeroturnaround:zt-zip:1.8'
+    testCompile group: 'junit', name: 'junit', version: '4.11'
+}
