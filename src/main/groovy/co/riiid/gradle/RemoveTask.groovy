@@ -18,19 +18,16 @@ class RemoveTask extends DefaultTask {
 
 		def http = new HttpBuilder(baseUrl)
 
+		//GET /repos/:owner/:repo/releases/tags/:tag
+		
 		def path = "/repos/" +
 				"${project.github.owner}/" +
-				"${project.github.repo}/releases"
-				
-		def postBody = [
-			tag_name        : project.github.getTagName(),			
-			name            : project.github.getName(),			
-		]
+				"${project.github.repo}/releases/"
 
-		http.request(Method.DELETE) {
-			uri.path += path
+		http.request(Method.GET) {
+			uri.path += path+"tags/"+project.github.getTagName()
 			requestContentType = ContentType.JSON
-			body = postBody
+
 			headers.'User-Agent' = HEADER_USER_AGENT
 			headers.'Authorization' = "token ${project.github.token}"
 			headers.'Accept' = accept
@@ -42,18 +39,39 @@ class RemoveTask extends DefaultTask {
 			logger.debug "$postLogMessage"
 
 			response.success = { resp, json ->
+
 				logger.debug "< $resp.statusLine"
 				logger.debug 'Response headers: \n' + resp.headers.collect { "< $it" }.join('\n')
+				println "name:: "+json.name
+				println "id::"+json.id
+
+				//DELETE /repos/:owner/:repo/releases/assets/:id
+				http.request(Method.DELETE){ req ->
+					uri.path = path+"assets/"+json.id
+					requestContentType = ContentType.JSON
+		
+					headers.'User-Agent' = HEADER_USER_AGENT
+					headers.'Authorization' = "token ${project.github.token}"
+					headers.'Accept' = accept
+					
+					// Item exists, change POST to PUT
+					response.success = { respInfo, jsonInfo ->
+						println "SUCCESS: Successfully deleted item '${json.id}'"
+					}
+					response.failure = { respInfo,jsonInfo ->
+						logger.debug 'Response headers: \n' + respInfo.headers.collect { "< $it" }.join('\n')
+						throw new Exception("FAILURE: Could not delete item '${json.id}'. Error response: \n${resp.statusLine}")
+					}
+				}
+
 			}
 
 			response.failure = { resp, json ->
 				logger.error "Error in $postLogMessage"
 				logger.debug 'Response headers: \n' + resp.headers.collect { "< $it" }.join('\n')
-				def errorMessage = json?json.message:resp.statusLine
-				def ref = json?"See $json.documentation_url":''
-				def errorDetails = json && json.errors? "Details: " + json.errors.collect { it }.join('\n'):''
-				throw new GradleScriptException("$errorMessage. $ref. $errorDetails", null)
 			}
 		}
 	}
+
 }
+
