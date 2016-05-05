@@ -1,3 +1,6 @@
+//
+// Got all the Attributes, that are in need for github
+//
 package co.riiid.gradle
 
 class GithubExtension {
