@@ -9,56 +9,76 @@ import org.gradle.api.GradleScriptException
 
 class RemoveTask extends DefaultTask {
 
-	// header
-	final String HEADER_USER_AGENT = 'gradle-github-plugin'
-	
-	@TaskAction
-	public remove() {
-		def baseUrl = project.github.getBaseUrl()
-		def accept = project.github.getAcceptHeader()
+  // header
+  final String HEADER_USER_AGENT = 'gradle-github-plugin'
 
-		def http = new HttpBuilder(baseUrl)
-		//GET /repos/:owner/:repo/releases/tags/:tag
+  @TaskAction
+  public remove() {
 
-		def path = "/repos/${project.github.owner}/${project.github.repo}/releases/tags/${project.github.getTagName()}"
-		//DELETE /repos/:owner/:repo/releases/:id
-        def deletePath = "/repos/${project.github.owner}/${project.github.repo}/releases/"
-		http.request(Method.GET) {
-			uri.path += path		
-			requestContentType = ContentType.JSON
+    def baseUrl = project.github.getBaseUrl()
+    def accept = project.github.getAcceptHeader()
 
-			headers.'User-Agent' = HEADER_USER_AGENT
-			headers.'Authorization' = "token ${project.github.token}"
-			headers.'Accept' = accept
-			
-			response.success = { resp, json ->
-				logger.debug "< $resp.statusLine"
-				logger.debug 'Response headers: \n' + resp.headers.collect { "< $it" }.join('\n')
-				println "name:: "+json.name
-				println "id:: "+json.id
-				http.request(Method.DELETE) {
-					requestContentType = ContentType.JSON
-					uri.path = deletePath+json.id
-					headers.'User-Agent' = HEADER_USER_AGENT
-					headers.'Authorization' = "token ${project.github.token}"
-					headers.'Accept' = accept
-					response.success = { respInfo, jsonInfo ->
-						logger.debug "< $respInfo.statusLine"
-						println "Deleted! "+json.id
-					}
-					response.failure ={ respInfo,jsonInfo ->
-						logger.error "Error while deleting"+json.id						
-						logger.debug ' Error on deleteing: \n' + respInfo.headers.collect { "< $it" }.join('\n')
-					}
-				}
-			}
+    def http = new HttpBuilder(baseUrl)
+    //GET /repos/:owner/:repo/releases/tags/:tag
 
-			response.failure = { resp, json ->
-				logger.error "Error in $postLogMessage"
-				logger.debug 'Response headers: \n' + resp.headers.collect { "< $it" }.join('\n')
-			}
-		}
+    def path = "/repos/${project.github.owner}/${project.github.repo}/releases/"
+
+
+    //DELETE /repos/:owner/:repo/releases/:id
+
+    http.request(Method.GET) {
+
+      uri.path += "${path}tags/${project.github.getTagName()}"
+
+      requestContentType = ContentType.JSON
+
+      headers.'User-Agent' = HEADER_USER_AGENT
+      headers.'Authorization' = "token ${project.github.token}"
+      headers.'Accept' = accept
+
+
+      def postLogMessage = "POST ${uri.path}\n" +
+	" > User-Agent: ${headers['User-Agent']}\n" +
+	" > Authorization: (not shown)\n" +
+	" > Accept: ${headers.Accept}\n"
+	logger.debug "$postLogMessage"
+
+      response.success = { resp, json ->
+	logger.debug "< $resp.statusLine"
+	logger.debug 'Response headers: \n' + resp.headers.collect { "< $it" }.join('\n')
+
+	println "name:: "+json.name
+	println "id:: "+json.id
+
+	http.request(Method.DELETE) {
+	  uri.path += "$path$json.id"
+
+	  requestContentType = ContentType.JSON
+
+	  headers.'User-Agent' = HEADER_USER_AGENT
+	  headers.'Authorization' = "token ${project.github.token}"
+	  headers.'Accept' = accept
+
+	  response.success = { respInfo, jsonInfo ->
+	    logger.debug "< $respInfo.statusLine"
+	    println "Deleted! "+json.id
+	  }
+
+	  response.failure ={ respInfo,jsonInfo ->
+	    logger.error "Error while deleting"+json.id
+	    logger.debug ' Error on deleteing: \n' + respInfo.headers.collect { "< $it" }.join('\n')
+	  }
 	}
+      }
 
+      response.failure = { resp, json ->
+	logger.error "Error in $postLogMessage"
+	logger.debug 'Response headers: \n' + resp.headers.collect { "< $it" }.join('\n')
+	def errorMessage = json?json.message:resp.statusLine
+	def ref = json?"See $json.documentation_url":''
+	def errorDetails = json && json.errors? "Details: " + json.errors.collect { it }.join('\n'):''
+	throw new GradleScriptException("$errorMessage. $ref. $errorDetails", null)
+      }
+    }
+  }
 }
-

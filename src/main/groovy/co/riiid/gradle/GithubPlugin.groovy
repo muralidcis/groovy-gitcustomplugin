@@ -9,7 +9,7 @@ class GithubPlugin implements Plugin<Project> {
 
 	void apply(Project project) {
 		project.extensions.create(NAME, GithubExtension)
-		//project.task('githubRelease', type: ReleaseTask)
+		project.task('githubRelease', type: ReleaseTask)
 		project.task('githubRemove', type: RemoveTask)
 	}
 }
