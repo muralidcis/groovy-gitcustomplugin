@@ -30,7 +30,7 @@ def inputFile = new File("README.md")
 github {
     owner = userName
     repo = repoName
-    token = '57e2a38738d913a27bd5e14be9d33efa391008e7'
+    token = //
     tagName = '9.1.1'
     targetCommitish = 'master'
     name = '9.1.1'
